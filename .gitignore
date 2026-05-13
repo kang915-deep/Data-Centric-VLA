@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Data and Checkpoints
+data/
+checkpoints/
+*.h5
+*.pth
+*.bin
+
+# Logs
+logs/
+wandb/
+.tensorboard
+
+# IDE
+.vscode/
+.idea/
+.DS_Store

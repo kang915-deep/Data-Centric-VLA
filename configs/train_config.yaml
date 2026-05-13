@@ -1,0 +1,29 @@
+# VLA PEFT Training Configuration
+
+model:
+  model_id: "openvla/openvla-7b"
+  load_in_4bit: true
+
+peft:
+  r: 32
+  alpha: 64
+  target_modules: ["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
+dataset:
+  train_path: "data/pruned_dataset.h5"
+  batch_size: 4
+  grad_accumulation_steps: 4
+  num_workers: 4
+
+training:
+  epochs: 10
+  learning_rate: 2.0e-4
+  lr_scheduler: "cosine"
+  warmup_steps: 500
+  weight_decay: 0.01
+  logging_steps: 10
+  save_steps: 500
+  output_dir: "checkpoints/vla_peft_v1"
+  wandb_project: "data-centric-vla"
+
+device: "cuda"

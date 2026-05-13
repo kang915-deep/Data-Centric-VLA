@@ -1,0 +1,13 @@
+torch
+torchvision
+transformers
+peft
+bitsandbytes
+accelerate
+open_clip_torch
+numpy
+pandas
+h5py
+pyyaml
+tqdm
+scipy
