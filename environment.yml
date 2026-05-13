@@ -1,0 +1,25 @@
+name: vla_env
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pytorch
+  - torchvision
+  - pytorch-cuda=11.8 # Or 12.1 depending on server drivers
+  - pip:
+    - transformers
+    - peft
+    - bitsandbytes
+    - accelerate
+    - open_clip_torch
+    - numpy
+    - pandas
+    - h5py
+    - pyyaml
+    - tqdm
+    - scipy
+    - pillow
