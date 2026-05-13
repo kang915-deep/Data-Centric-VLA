@@ -6,6 +6,9 @@ from tqdm import tqdm
 from PIL import Image
 import io
 
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from utils.kinematic_filter import KinematicFilter
 from utils.semantic_filter import SemanticFilter
 
