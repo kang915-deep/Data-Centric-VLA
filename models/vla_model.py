@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoProcessor, AutoModelForVision2Seq, BitsAndBytesConfig
+from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from typing import Optional
 
@@ -29,7 +29,7 @@ class VLAModelWrapper:
             )
 
         print(f"Loading model: {model_id}...")
-        self.model = AutoModelForVision2Seq.from_pretrained(
+        self.model = AutoModelForImageTextToText.from_pretrained(
             model_id,
             quantization_config=self.bnb_config,
             device_map="auto" if device == "cuda" else None,

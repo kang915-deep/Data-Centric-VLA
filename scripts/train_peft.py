@@ -1,15 +1,14 @@
 import os
+import sys
 import yaml
 import torch
 from torch.utils.data import Dataset, DataLoader
-from transformers import AdamW, get_cosine_schedule_with_warmup
+from torch.optim import AdamW
+from transformers import get_cosine_schedule_with_warmup
 from tqdm import tqdm
 import h5py
 
-from models.vla_model.py import VLAModelWrapper # Wait, file path correction needed in import if in different dir
-
-# Correction: Since we are in scripts/, we need to handle paths
-import sys
+# Ensure project root is in path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.vla_model import VLAModelWrapper
 
