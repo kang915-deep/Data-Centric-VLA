@@ -1,7 +1,19 @@
+# Set CUDA device BEFORE any imports to ensure bitsandbytes/torch see the right GPU
 import os
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")  # Change "0" to your desired GPU index
+os.environ.setdefault("MKL_SERVICE_FORCE_INTEL", "1")
+
 import sys
 import yaml
+
+# === CUDA Diagnostics ===
 import torch
+if not torch.cuda.is_available():
+    print(f"[ERROR] CUDA not available. CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES', '(not set)')}")
+    print(f"[ERROR] torch.version.cuda={torch.version.cuda}")
+    print(f"[DIAG] Run this to check your GPUs: nvidia-smi")
+    print(f"[DIAG] Run this to test basic CUDA: python -c \"import torch; print(torch.cuda.device_count()); print(torch.cuda.is_available())\"")
+    print(f"[HINT] Try a different GPU index, or run: sudo nvidia-smi -r  (to reset the driver)")
 import io
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader

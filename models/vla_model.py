@@ -3,22 +3,42 @@ import sys
 import types
 import transformers
 
-# Transformers v5 compatibility: Deep module hijacking for legacy PaddingStrategy path
+# Transformers v5 compatibility: Create a synthetic tokenization_utils module
+# that re-exports symbols from tokenization_utils_base (which moved/renamed in v5).
+# Each symbol is loaded individually so one missing entry doesn't break the rest.
 print("--- [Compatibility Fix] Injecting transformers.tokenization_utils ---")
-try:
+_m = types.ModuleType("tokenization_utils")
+_symbols_loaded = 0
+_symbols_failed = 0
+def _try_inject(src, name, fallback=None):
+    global _symbols_loaded, _symbols_failed
     try:
-        from transformers.utils import PaddingStrategy
-    except ImportError:
-        from transformers.tokenization_utils_base import PaddingStrategy
-        
-    m = types.ModuleType("tokenization_utils")
-    m.PaddingStrategy = PaddingStrategy
-    # Inject into sys.modules and transformers package object
-    sys.modules["transformers.tokenization_utils"] = m
-    setattr(transformers, "tokenization_utils", m)
-    print("--- [Compatibility Fix] Injection Successful ---")
+        val = getattr(src, name)
+        setattr(_m, name, val)
+        _symbols_loaded += 1
+    except AttributeError:
+        if fallback is not None:
+            setattr(_m, name, fallback)
+            _symbols_loaded += 1
+        else:
+            _symbols_failed += 1
+
+# Import symbols from tokenization_utils_base (available in both v4 and v5)
+try:
+    from transformers import tokenization_utils_base as _base
+    for _sym in ["PaddingStrategy", "PreTokenizedInput", "TextInput",
+                 "EncodedInput", "AddedToken", "TruncationStrategy",
+                 "TextInputPair", "PreTokenizedInputPair", "EncodedInputPair"]:
+        _try_inject(_base, _sym)
+    # TextInputSequence: defined in v4's tokenization_utils_base, removed in v5.
+    # It's a Union[str, List[str]] used in type hints — define manually.
+    _try_inject(_base, "TextInputSequence", fallback=str)
 except Exception as e:
-    print(f"--- [Compatibility Fix] Injection Failed: {e} ---")
+    print(f"  [Warning] Could not access tokenization_utils_base: {e}")
+
+sys.modules["transformers.tokenization_utils"] = _m
+setattr(transformers, "tokenization_utils", _m)
+print(f"--- [Compatibility Fix] Done — {_symbols_loaded} injected, {_symbols_failed} missing (non-critical) ---")
 
 from transformers import AutoProcessor, AutoModel, AutoConfig, BitsAndBytesConfig
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
