@@ -36,6 +36,19 @@ class VLAModelWrapper:
             if "AutoModelForVision2Seq" in config.auto_map:
                 config.auto_map["AutoModel"] = config.auto_map["AutoModelForVision2Seq"]
 
+        # Monkey-patch tie_weights for Transformers v5 (Prismatic/OpenVLA fix)
+        from transformers.dynamic_module_utils import get_class_from_dynamic_module
+        try:
+            model_class = get_class_from_dynamic_module(config.auto_map["AutoModel"], model_id)
+            original_tie_weights = model_class.tie_weights
+            def patched_tie_weights(self, *args, **kwargs):
+                # Transformers v5 passes 'recompute_mapping', which legacy code doesn't accept
+                kwargs.pop("recompute_mapping", None)
+                return original_tie_weights(self, *args, **kwargs)
+            model_class.tie_weights = patched_tie_weights
+        except Exception as e:
+            print(f"Warning: Could not patch tie_weights: {e}")
+
         self.model = AutoModel.from_pretrained(
             model_id,
             config=config,
