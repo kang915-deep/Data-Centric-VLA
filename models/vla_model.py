@@ -59,7 +59,7 @@ class VLAModelWrapper:
         )
         
         # Note: Processor handling varies by model
-        # self.processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+        self.processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
 
     def apply_lora(
         self, 

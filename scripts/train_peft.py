@@ -2,6 +2,8 @@ import os
 import sys
 import yaml
 import torch
+import io
+from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torch.optim import AdamW
 from transformers import get_cosine_schedule_with_warmup
@@ -19,7 +21,6 @@ class PrunedRoboticDataset(Dataset):
     def __init__(self, h5_path, processor=None):
         self.h5_path = h5_path
         self.processor = processor
-        # In a real scenario, we'd index all transitions across all demos
         self.file = h5py.File(h5_path, 'r')
         self.keys = list(self.file.keys())
 
@@ -28,13 +29,27 @@ class PrunedRoboticDataset(Dataset):
 
     def __getitem__(self, idx):
         demo = self.file[self.keys[idx]]
-        # For simplicity, returning a random frame from the demo
-        # A real VLA trainer would return a sequence or a specific frame+action
+        instruction = demo.attrs.get('instruction', 'robot action')
+        
+        # Decode image
+        raw_img = demo['obs']['image'][0]
+        image = Image.open(io.BytesIO(raw_img)).convert("RGB")
+        
+        if self.processor:
+            # Process image and text (VLA models expect prompt + image)
+            inputs = self.processor(text=instruction, images=image, return_tensors="pt")
+            # Flatten to remove the batch dimension added by the processor
+            pixel_values = inputs["pixel_values"].squeeze(0)
+            return {
+                "pixel_values": pixel_values,
+                "labels": torch.tensor(demo['actions'][0]), # Simple placeholder
+                "instruction": instruction
+            }
+        
         return {
-            "image": demo['obs']['image'][0],
-            "state": demo['obs']['joint_states'][0],
+            "image": np.array(image),
             "action": demo['actions'][0],
-            "instruction": demo.attrs['instruction']
+            "instruction": instruction
         }
 
 def train(config_path):
@@ -54,7 +69,7 @@ def train(config_path):
     )
 
     # 2. Setup Dataset
-    dataset = PrunedRoboticDataset(config['dataset']['train_path'])
+    dataset = PrunedRoboticDataset(config['dataset']['train_path'], processor=wrapper.processor)
     dataloader = DataLoader(
         dataset, 
         batch_size=config['dataset']['batch_size'],
