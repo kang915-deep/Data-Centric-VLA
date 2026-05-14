@@ -41,7 +41,8 @@ class VLAModelWrapper:
             config=config,
             quantization_config=self.bnb_config,
             device_map="auto" if device == "cuda" else None,
-            trust_remote_code=True
+            trust_remote_code=True,
+            attn_implementation="eager"
         )
         
         # Note: Processor handling varies by model
