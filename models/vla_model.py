@@ -42,9 +42,9 @@ class VLAModelWrapper:
             model_class = get_class_from_dynamic_module(config.auto_map["AutoModel"], model_id)
             original_tie_weights = model_class.tie_weights
             def patched_tie_weights(self, *args, **kwargs):
-                # Transformers v5 passes 'recompute_mapping', which legacy code doesn't accept
-                kwargs.pop("recompute_mapping", None)
-                return original_tie_weights(self, *args, **kwargs)
+                # Transformers v5 passes various kwargs (recompute_mapping, missing_keys)
+                # Legacy code only expects self (and maybe positional args)
+                return original_tie_weights(self, *args)
             model_class.tie_weights = patched_tie_weights
         except Exception as e:
             print(f"Warning: Could not patch tie_weights: {e}")
