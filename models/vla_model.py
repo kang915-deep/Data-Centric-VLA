@@ -3,19 +3,22 @@ import sys
 import types
 import transformers
 
-# Transformers v5 compatibility: Module hijacking for legacy PaddingStrategy path
+# Transformers v5 compatibility: Deep module hijacking for legacy PaddingStrategy path
+print("--- [Compatibility Fix] Injecting transformers.tokenization_utils ---")
 try:
     try:
         from transformers.utils import PaddingStrategy
     except ImportError:
         from transformers.tokenization_utils_base import PaddingStrategy
         
-    if "transformers.tokenization_utils" not in sys.modules:
-        m = types.ModuleType("transformers.tokenization_utils")
-        m.PaddingStrategy = PaddingStrategy
-        sys.modules["transformers.tokenization_utils"] = m
-except Exception:
-    pass
+    m = types.ModuleType("tokenization_utils")
+    m.PaddingStrategy = PaddingStrategy
+    # Inject into sys.modules and transformers package object
+    sys.modules["transformers.tokenization_utils"] = m
+    setattr(transformers, "tokenization_utils", m)
+    print("--- [Compatibility Fix] Injection Successful ---")
+except Exception as e:
+    print(f"--- [Compatibility Fix] Injection Failed: {e} ---")
 
 from transformers import AutoProcessor, AutoModel, AutoConfig, BitsAndBytesConfig
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
