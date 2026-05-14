@@ -32,6 +32,19 @@ class VLAModelWrapper:
         
         # Transformers v5 compatibility fix for legacy remote models
         config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+        
+        # Module hijacking for PaddingStrategy in Transformers v5
+        import sys
+        import types
+        try:
+            from transformers.utils import PaddingStrategy
+            if "transformers.tokenization_utils" not in sys.modules:
+                mock_module = types.ModuleType("transformers.tokenization_utils")
+                mock_module.PaddingStrategy = PaddingStrategy
+                sys.modules["transformers.tokenization_utils"] = mock_module
+        except ImportError:
+            pass
+
         if hasattr(config, "auto_map") and "AutoModel" not in config.auto_map:
             if "AutoModelForVision2Seq" in config.auto_map:
                 config.auto_map["AutoModel"] = config.auto_map["AutoModelForVision2Seq"]
