@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoProcessor, AutoModel, BitsAndBytesConfig
+from transformers import AutoProcessor, AutoModel, AutoConfig, BitsAndBytesConfig
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from typing import Optional
 
@@ -29,8 +29,16 @@ class VLAModelWrapper:
             )
 
         print(f"Loading model: {model_id}...")
+        
+        # Transformers v5 compatibility fix for legacy remote models
+        config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+        if hasattr(config, "auto_map") and "AutoModel" not in config.auto_map:
+            if "AutoModelForVision2Seq" in config.auto_map:
+                config.auto_map["AutoModel"] = config.auto_map["AutoModelForVision2Seq"]
+
         self.model = AutoModel.from_pretrained(
             model_id,
+            config=config,
             quantization_config=self.bnb_config,
             device_map="auto" if device == "cuda" else None,
             trust_remote_code=True
